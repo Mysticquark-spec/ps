@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practice School Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg at 50% 50%, transparent, rgba(102, 126, 234, 0.1), transparent);
+            animation: rotate 10s linear infinite;
+            z-index: 0;
+        }
+
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .header > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from {
+                text-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+                filter: drop-shadow(0 0 20px rgba(102, 126, 234, 0.3));
+            }
+            to {
+                text-shadow: 0 0 30px rgba(118, 75, 162, 0.8);
+                filter: drop-shadow(0 0 30px rgba(118, 75, 162, 0.5));
+            }
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #94a3b8;
+            margin-bottom: 30px;
+        }
+
+        .loading-spinner {
+            display: none;
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(102, 126, 234, 0.3);
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            display: none;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            color: #ef4444;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.8), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .stat-card:hover::before {
+            left: 100%;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 25px;
+            color: #e2e8f0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .filter-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .filter-btn:hover::before {
+            left: 100%;
+        }
+
+        .filter-btn:hover {
+            background: rgba(102, 126, 234, 0.2);
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .filter-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: transparent;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .search-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-box {
+            padding: 12px 20px 12px 45px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 25px;
+            color: #e2e8f0;
+            backdrop-filter: blur(10px);
+            width: 300px;
+            transition: all 0.3s ease;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            color: #94a3b8;
+            pointer-events: none;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+            width: 350px;
+        }
+
+        .search-box::placeholder {
+            color: #94a3b8;
+        }
+
+        .clear-search {
+            position: absolute;
+            right: 15px;
+            color: #94a3b8;
+            cursor: pointer;
+            display: none;
+            transition: color 0.3s ease;
+        }
+
+        .clear-search:hover {
+            color: #e2e8f0;
+        }
+
+        .student-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .student-card {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .student-card.animate-in {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .student-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 4px;
+            height: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .student-card.selected::after {
+            background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+        }
+
+        .student-card.rejected::after {
+            background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+        }
+
+        .student-card.disabled::after {
+            background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+        }
+
+        .student-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+        }
+
+        .student-info h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #f1f5f9;
+        }
+
+        .student-id {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 8px;
+            border-radius: 6px;
+            display: inline-block;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .status-badge::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.8s ease;
+        }
+
+        .status-badge:hover::before {
+            left: 100%;
+        }
+
+        .status-selected {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .status-rejected {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .status-disabled {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 6px;
+            transition: width 2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            color: #94a3b8;
+            font-size: 1.2rem;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+
+        .no-results.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .floating-stats {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            z-index: 1000;
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateX(100px);
+        }
+
+        .floating-stats.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* .export-btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border: none;
+            border-radius: 25px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        } */
+
+        /* .export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+        } */
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .search-box {
+                width: 100%;
+            }
+            
+            .search-box:focus {
+                width: 100%;
+            }
+            
+            .floating-stats {
+                position: relative;
+                top: auto;
+                right: auto;
+                margin-bottom: 20px;
+                opacity: 1;
+                transform: none;
+            }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        /* Tooltip styles */
+        .tooltip {
+            position: relative;
+            cursor: help;
+        }
+
+        .tooltip::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 1000;
+        }
+
+        .tooltip:hover::after {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Practice School Dashboard</h1>
+            <p class="subtitle">Student Internship Placement Analytics</p>
+            <div class="loading-spinner" id="loadingSpinner"></div>
+            <div class="error-message" id="errorMessage">
+                <h3>⚠️ Error Loading Data</h3>
+                <p>Unable to load student data. Please check if 'student.json' file exists and is properly formatted.</p>
+            </div>
+            <div class="progress-bar" id="progressContainer" style="display: none;">
+                <div class="progress-fill" id="overallProgress"></div>
+            </div>
+        </div>
+
+        <div class="stats-grid" id="statsGrid" style="display: none;">
+            <div class="stat-card pulse tooltip" data-tooltip="Total number of students">
+                <div class="stat-number" id="totalStudents">0</div>
+                <div class="stat-label">Total Students</div>
+            </div>
+            <div class="stat-card tooltip" data-tooltip="Students successfully placed">
+                <div class="stat-number" id="selectedCount" style="color: #10b981;">0</div>
+                <div class="stat-label">Selected</div>
+            </div>
+            <div class="stat-card tooltip" data-tooltip="Students not selected for placement">
+                <div class="stat-number" id="rejectedCount" style="color: #ef4444;">0</div>
+                <div class="stat-label">Not Selected</div>
+            </div>
+            <div class="stat-card tooltip" data-tooltip="Students with disabled status">
+                <div class="stat-number" id="disabledCount" style="color: #f59e0b;">0</div>
+                <div class="stat-label">Disabled</div>
+            </div>
+            <div class="stat-card tooltip" data-tooltip="Percentage of successful placements">
+                <div class="stat-number" id="successRate" style="color: #667eea;">0%</div>
+                <div class="stat-label">Success Rate</div>
+            </div>
+        </div>
+
+        <div class="controls" id="controlsSection" style="display: none;">
+            <div class="filter-group">
+                <button class="filter-btn active" data-filter="all">All Students</button>
+                <button class="filter-btn" data-filter="yes">Selected</button>
+                <button class="filter-btn" data-filter="no">Not Selected</button>
+                <button class="filter-btn" data-filter="dis">Disabled</button>
+                <!-- <button class="export-btn" id="exportBtn">Export Data</button> -->
+            </div>
+            <div class="search-container">
+                <span class="search-icon">🔍</span>
+                <input type="text" class="search-box" id="searchInput" placeholder="Search by name or ID...">
+                <span class="clear-search" id="clearSearch">✕</span>
+            </div>
+        </div>
+
+        <div class="student-grid" id="studentGrid"></div>
+        
+        <div class="no-results" id="noResults">
+            <h3>📭 No students found</h3>
+            <p>Try adjusting your search or filter criteria</p>
+        </div>
+
+        <div class="floating-stats" id="floatingStats">
+            <div>Filtered: <span id="filteredCount">0</span></div>
+        </div>
+    </div>
+
+    <script>
+        let students = [];
+        let filteredStudents = [];
+        let currentFilter = 'all';
+        let currentSearch = '';
+
+        // Show loading state
+        function showLoading() {
+            document.getElementById('loadingSpinner').style.display = 'block';
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
+        // Hide loading state
+        function hideLoading() {
+            document.getElementById('loadingSpinner').style.display = 'none';
+        }
+
+        // Show error state
+        function showError(message = 'Error loading data') {
+            hideLoading();
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.style.display = 'block';
+            if (message !== 'Error loading data') {
+                errorEl.querySelector('p').textContent = message;
+            }
+        }
+
+        // Show success state
+        function showSuccess() {
+            hideLoading();
+            document.getElementById('statsGrid').style.display = 'grid';
+            document.getElementById('controlsSection').style.display = 'flex';
+            document.getElementById('progressContainer').style.display = 'block';
+            
+            // Animate floating stats
+            setTimeout(() => {
+                document.getElementById('floatingStats').classList.add('show');
+            }, 1000);
+        }
+
+        // Load students data with better error handling
+       // Load students data with better error handling
+async function loadStudentData() {
+    showLoading();
+
+    try {
+        const response = await fetch('student.json');
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const rawData = await response.json();
+
+        if (!Array.isArray(rawData)) {
+            throw new Error('Invalid data format: Expected an array of student objects');
+        }
+
+        if (rawData.length === 0) {
+            throw new Error('No student data found in the JSON file');
+        }
+
+        // Map JSON keys into the format expected by your app
+        const data = rawData.map(student => ({
+            sno: student["S.No"],
+            id: student["ERP ID"],
+            campusId: student["CAMPUS ID"],
+            name: student["Name"],
+            status: student["Selected"] ? student["Selected"].toLowerCase() : "no"
+        }));
+
+        // Required fields for validation
+        const requiredFields = ['name', 'campusId', 'sno', 'status'];
+        const invalidEntries = data.filter(student =>
+            !requiredFields.every(field => student.hasOwnProperty(field))
+        );
+
+        if (invalidEntries.length > 0) {
+            console.warn(`Found ${invalidEntries.length} invalid student entries`, invalidEntries);
+        }
+
+        students = data.filter(student =>
+            requiredFields.every(field => student.hasOwnProperty(field))
+        );
+
+        if (students.length === 0) {
+            throw new Error('No valid student entries found. Please check the data format.');
+        }
+
+        console.log(`Successfully loaded ${students.length} student records`);
+
+        filteredStudents = [...students];
+
+        showSuccess();
+        calculateStats();
+        renderStudents();
+
+    } catch (error) {
+        console.error('Error loading student data:', error);
+        let errorMessage = 'Unable to load student data. ';
+
+        if (error.message.includes('HTTP 404')) {
+            errorMessage += 'The student.json file was not found.';
+        } else if (error.message.includes('Invalid data format')) {
+            errorMessage += error.message;
+        } else if (error.message.includes('SyntaxError')) {
+            errorMessage += 'The JSON file contains invalid syntax.';
+        } else {
+            errorMessage += error.message;
+        }
+
+        showError(errorMessage);
+    }
+}
+
+
+        function calculateStats() {
+            const selected = students.filter(s => s.status === 'yes').length;
+            const rejected = students.filter(s => s.status === 'no').length;
+            const disabled = students.filter(s => s.status === 'dis').length;
+            const successRate = selected + rejected > 0 ? Math.round((selected / (selected + rejected)) * 100) : 0;
+
+            // Animate number counting
+            animateNumber('totalStudents', students.length);
+            animateNumber('selectedCount', selected);
+            animateNumber('rejectedCount', rejected);
+            animateNumber('disabledCount', disabled);
+            animateNumber('successRate', successRate, '%');
+            
+            // Animate progress bar
+            setTimeout(() => {
+                document.getElementById('overallProgress').style.width = successRate + '%';
+            }, 500);
+        }
+
+        function animateNumber(elementId, targetValue, suffix = '') {
+            const element = document.getElementById(elementId);
+            const duration = 1500;
+            const start = 0;
+            const startTime = performance.now();
+
+            function updateNumber(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const easeOutCubic = 1 - Math.pow(1 - progress, 3);
+                const currentValue = Math.round(start + (targetValue - start) * easeOutCubic);
+                
+                element.textContent = currentValue + suffix;
+                
+                if (progress < 1) {
+                    requestAnimationFrame(updateNumber);
+                }
+            }
+            
+            requestAnimationFrame(updateNumber);
+        }
+
+        function renderStudents(studentsToRender = filteredStudents) {
+            const grid = document.getElementById('studentGrid');
+            const noResults = document.getElementById('noResults');
+            const filteredCount = document.getElementById('filteredCount');
+            
+            filteredCount.textContent = studentsToRender.length;
+            
+            if (studentsToRender.length === 0) {
+                grid.style.display = 'none';
+                noResults.style.display = 'block';
+                noResults.classList.add('show');
+                return;
+            }
+            
+            grid.style.display = 'grid';
+            noResults.style.display = 'none';
+            noResults.classList.remove('show');
+            
+            grid.innerHTML = studentsToRender.map(student => {
+                const statusClass = student.status === 'yes' ? 'selected' : 
+                                  student.status === 'no' ? 'rejected' : 'disabled';
+                const statusText = student.status === 'yes' ? 'Selected' : 
+                                 student.status === 'no' ? 'Not Selected' : 'Disabled';
+                const statusBadge = student.status === 'yes' ? 'status-selected' : 
+                                   student.status === 'no' ? 'status-rejected' : 'status-disabled';
+
+                return `
+                    <div class="student-card ${statusClass}">
+                        <div class="student-info">
+                            <h3>${escapeHtml(student.name)}</h3>
+                            <div class="student-id">${escapeHtml(student.campusId)}${escapeHtml(student.sno.toString())}</div>
+                            <span class="status-badge ${statusBadge}">${statusText}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Animate cards in
+            const cards = grid.querySelectorAll('.student-card');
+            cards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.classList.add('animate-in');
+                }, index * 50);
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function filterStudents(filter) {
+            currentFilter = filter;
+            applyFiltersAndSearch();
+            
+            // Update active filter button
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.filter === filter) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        function searchStudents(query) {
+            currentSearch = query;
+            applyFiltersAndSearch();
+            
+            // Show/hide clear button
+            const clearBtn = document.getElementById('clearSearch');
+            clearBtn.style.display = query ? 'block' : 'none';
+        }
+
+        function applyFiltersAndSearch() {
+            let results = students;
+            
+            // Apply filter
+            if (currentFilter !== 'all') {
+                results = results.filter(student => student.status === currentFilter);
+            }
+            
+            // Apply search
+            if (currentSearch) {
+                const query = currentSearch.toLowerCase();
+                results = results.filter(student => 
+                    student.name.toLowerCase().includes(query) ||
+                    student.campusId.toLowerCase().includes(query) ||
+                    student.sno.toString().includes(query)
+                );
+            }
+            
+            filteredStudents = results;
+            renderStudents();
+        }
+
+        function exportData() {
+            const dataToExport = filteredStudents.map(student => ({
+                Name: student.name,
+                'Campus ID': student.campusId,
+                'Serial Number': student.sno,
+                Status: student.status === 'yes' ? 'Selected' : 
+                       student.status === 'no' ? 'Not Selected' : 'Disabled'
+            }));
+            
+            const csv = [
+                Object.keys(dataToExport[0]).join(','),
+                ...dataToExport.map(row => Object.values(row).join(','))
+            ].join('\n');
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `practice_school_data_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Event listeners
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (btn.dataset.filter) {
+                    filterStudents(btn.dataset.filter);
+                }
+            });
+        });
+
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            searchStudents(e.target.value);
+        });
+
+        document.getElementById('clearSearch').addEventListener('click', () => {
+            document.getElementById('searchInput').value = '';
+            searchStudents('');
+        });
+
+        // document.getElementById('exportBtn').addEventListener('click', exportData);
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'f') {
+                e.preventDefault();
+                document.getElementById('searchInput').focus();
+            }
+            if (e.key === 'Escape') {
+                document.getElementById('searchInput').value = '';
+                searchStudents('');
+            }
+        });
+
+        // Initialize the application
+        loadStudentData();
+
+        // Add some visual flair with particles (optional enhancement)
+        function createParticle() {
+            const particle = document.createElement('div');
+            particle.style.position = 'fixed';
+            particle.style.width = '2px';
+            particle.style.height = '2px';
+            particle.style.background = '#667eea';
+            particle.style.borderRadius = '50%';
+            particle.style.pointerEvents = 'none';
+            particle.style.opacity = '0.6';
+            particle.style.zIndex = '-1';
+            
+            const startX = Math.random() * window.innerWidth;
+            const startY = window.innerHeight;
+            
+            particle.style.left = startX + 'px';
+            particle.style.top = startY + 'px';
+            
+            document.body.appendChild(particle);
+            
+            const animation = particle.animate([
+                { transform: 'translateY(0px)', opacity: 0.6 },
+                { transform: `translateY(-${window.innerHeight + 100}px)`, opacity: 0 }
+            ], {
+                duration: Math.random() * 3000 + 2000,
+                easing: 'linear'
+            });
+            
+            animation.addEventListener('finish', () => {
+                particle.remove();
+            });
+        }
+
+        // Create floating particles occasionally
+        setInterval(createParticle, 2000);
+
+        // Add scroll-based animations
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            const header = document.querySelector('.header');
+            if (header) {
+                header.style.transform = `translateY(${scrolled * 0.1}px)`;
+            }
+        });
+
+        // Add performance monitoring
+        if ('performance' in window) {
+            window.addEventListener('load', () => {
+                setTimeout(() => {
+                    const perfData = performance.getEntriesByType('navigation')[0];
+                    console.log(`Page load time: ${perfData.loadEventEnd - perfData.loadEventStart}ms`);
+                }, 0);
+            });
+        }
+    </script>
+</body>
+</html>
